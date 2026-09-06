@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "wanted",
+  "version": "${version}",
+  "name": "Wanted Visuals",
+  "description": "Клиент-сайд визуальный клиент для Minecraft 1.21.1: японские шляпы (каса), смена неба, ESP, кастомное главное меню и современный ClickGUI.",
+  "authors": ["Wanted"],
+  "license": "MIT",
+  "icon": "assets/wanted/icon/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "client": ["wanted.WantedClient"]
+  },
+  "mixins": [
+    { "config": "wanted.mixins.json", "environment": "client" }
+  ],
+  "depends": {
+    "fabricloader": ">=0.16.0",
+    "minecraft": "~1.21.1",
+    "java": ">=21",
+    "fabric-api": "*"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "required": true,
+  "package": "wanted.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "client": [
+    "ClientWorldMixin",
+    "SimpleOptionAccessor",
+    "TitleScreenMixin",
+    "WorldMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
