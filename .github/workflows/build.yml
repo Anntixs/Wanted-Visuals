@@ -23,7 +23,7 @@ jobs:
           gradle-version: '8.10'
 
       - name: Build
-        run: gradle build --no-daemon --stacktrace
+        run: gradle build --no-daemon
 
       - name: Upload jar
         if: success()
