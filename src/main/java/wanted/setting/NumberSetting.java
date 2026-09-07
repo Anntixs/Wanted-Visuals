@@ -1,5 +1,7 @@
 package wanted.setting;
 
+import java.util.function.Supplier;
+
 import net.minecraft.util.math.MathHelper;
 
 public class NumberSetting extends Setting {
@@ -48,5 +50,12 @@ public class NumberSetting extends Setting {
 
     public double getMax() {
         return max;
+    }
+
+    /** Ковариантный возврат, чтобы цепочка сохраняла конкретный тип настройки. */
+    @Override
+    public NumberSetting visibleWhen(Supplier<Boolean> condition) {
+        super.visibleWhen(condition);
+        return this;
     }
 }

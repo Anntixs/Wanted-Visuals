@@ -1,5 +1,7 @@
 package wanted.setting;
 
+import java.util.function.Supplier;
+
 import java.awt.Color;
 
 /** HSB-цвет с опциональной радугой. */
@@ -85,5 +87,12 @@ public class ColorSetting extends Setting {
 
     private static float clamp01(float v) {
         return Math.max(0f, Math.min(1f, v));
+    }
+
+    /** Ковариантный возврат, чтобы цепочка сохраняла конкретный тип настройки. */
+    @Override
+    public ColorSetting visibleWhen(Supplier<Boolean> condition) {
+        super.visibleWhen(condition);
+        return this;
     }
 }

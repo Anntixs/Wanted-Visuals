@@ -1,5 +1,7 @@
 package wanted.setting;
 
+import java.util.function.Supplier;
+
 import java.util.Arrays;
 import java.util.List;
 
@@ -36,5 +38,12 @@ public class ModeSetting extends Setting {
 
     public void cycle(int direction) {
         index = Math.floorMod(index + direction, modes.size());
+    }
+
+    /** Ковариантный возврат, чтобы цепочка сохраняла конкретный тип настройки. */
+    @Override
+    public ModeSetting visibleWhen(Supplier<Boolean> condition) {
+        super.visibleWhen(condition);
+        return this;
     }
 }

@@ -12,7 +12,7 @@ import wanted.modules.world.TimeChangerModule;
 @Mixin(World.class)
 public class WorldMixin {
 
-    @Inject(method = "getSkyAngle", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "getSkyAngle(F)F", at = @At("HEAD"), cancellable = true)
     private void wanted$skyAngle(float tickDelta, CallbackInfoReturnable<Float> cir) {
         TimeChangerModule timeChanger = ModuleManager.timeChanger();
         if (timeChanger == null || !timeChanger.isEnabled()) return;

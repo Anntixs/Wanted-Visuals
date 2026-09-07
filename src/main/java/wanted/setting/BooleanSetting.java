@@ -1,5 +1,7 @@
 package wanted.setting;
 
+import java.util.function.Supplier;
+
 public class BooleanSetting extends Setting {
     private boolean value;
 
@@ -18,5 +20,12 @@ public class BooleanSetting extends Setting {
 
     public void toggle() {
         this.value = !this.value;
+    }
+
+    /** Ковариантный возврат, чтобы цепочка сохраняла конкретный тип настройки. */
+    @Override
+    public BooleanSetting visibleWhen(Supplier<Boolean> condition) {
+        super.visibleWhen(condition);
+        return this;
     }
 }
