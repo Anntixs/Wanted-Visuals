@@ -7,7 +7,11 @@ import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.fabricmc.fabric.api.client.rendering.v1.LivingEntityFeatureRendererRegistrationCallback;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
-import net.fabricmc.fabric.api.event.player.AttackEntityCallback;
+import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
+import net.fabricmc.fabric.api.client.screen.v1.Screens;
+import net.minecraft.client.gui.screen.TitleScreen;
+import net.minecraft.client.gui.widget.ButtonWidget;
+import net.minecraft.text.Text;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.render.entity.PlayerEntityRenderer;
@@ -20,6 +24,7 @@ import wanted.module.Module;
 import wanted.module.ModuleManager;
 import wanted.render.KasaFeatureRenderer;
 import wanted.ui.ClickGui;
+import wanted.ui.WantedTitleScreen;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -61,12 +66,19 @@ public class WantedClient implements ClientModInitializer {
                     }
                 });
 
-        // Эффект крита по любой сущности: событие приходит при атаке ЛКМ.
-        AttackEntityCallback.EVENT.register((player, world, hand, entity, hitResult) -> {
-            if (world.isClient && player == MinecraftClient.getInstance().player) {
-                ModuleManager.critEffect().onAttack(entity);
-            }
-            return net.minecraft.util.ActionResult.PASS;
+        // Если пользователь ушёл на ванильное меню — даём кнопку вернуться обратно.
+        ScreenEvents.AFTER_INIT.register((client, screen, scaledWidth, scaledHeight) -> {
+            if (!(screen instanceof TitleScreen) || customMainMenu) return;
+
+            Screens.getButtons(screen).add(ButtonWidget.builder(
+                            Text.literal("Wanted Visuals"),
+                            button -> {
+                                customMainMenu = true;
+                                ConfigManager.save();
+                                client.setScreen(new WantedTitleScreen());
+                            })
+                    .dimensions(4, 4, 100, 20)
+                    .build());
         });
 
         ClientLifecycleEvents.CLIENT_STOPPING.register(client -> ConfigManager.save());

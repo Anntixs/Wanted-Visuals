@@ -39,6 +39,7 @@ public class KasaHatModule extends Module {
 
     public KasaHatModule() {
         super("Kasa", "Шляпы над игроками", Category.VISUAL);
+        setEnabled(true);
     }
 
     @Override

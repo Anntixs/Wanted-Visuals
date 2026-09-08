@@ -8,6 +8,9 @@ import net.minecraft.client.gui.screen.option.OptionsScreen;
 import net.minecraft.client.gui.screen.world.SelectWorldScreen;
 import net.minecraft.text.Text;
 import wanted.WantedClient;
+import wanted.config.ConfigManager;
+import wanted.module.ModuleManager;
+import wanted.modules.hud.ThemeModule;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,6 +31,10 @@ public class WantedTitleScreen extends Screen {
                 () -> client.setScreen(new SelectWorldScreen(this))));
         buttons.add(new MenuButton("Сетевая игра", "MULTI",
                 () -> client.setScreen(new MultiplayerScreen(this))));
+        buttons.add(new MenuButton("Модули клиента", "CLICKGUI",
+                () -> client.setScreen(new ClickGui(this))));
+        buttons.add(new MenuButton("Тема: " + Theme.getPalette().getDisplayName(), "THEME",
+                this::cycleTheme));
         buttons.add(new MenuButton("Настройки", "OPTIONS",
                 () -> client.setScreen(new OptionsScreen(this, client.options))));
         buttons.add(new MenuButton("Ванильное меню", "VANILLA",
@@ -45,6 +52,17 @@ public class WantedTitleScreen extends Screen {
     @Override
     public void renderBackground(DrawContext context, int mouseX, int mouseY, float delta) {
         renderBackdrop(context);
+    }
+
+    /** Переключает палитру по кругу прямо из меню и сразу сохраняет выбор. */
+    private void cycleTheme() {
+        ThemeModule module = ModuleManager.theme();
+        if (module == null) return;
+
+        module.palette.cycle(1);
+        module.sync();
+        ConfigManager.save();
+        init();
     }
 
     @Override
@@ -91,7 +109,7 @@ public class WantedTitleScreen extends Screen {
         renderInfoCard(context);
 
         context.drawText(textRenderer, "Minecraft 1.21.1 · Fabric", 6, height - 19, Theme.TEXT_MUTED, false);
-        context.drawText(textRenderer, "Wanted Visuals v1.0 — только визуал",
+        context.drawText(textRenderer, "ClickGUI — RIGHT SHIFT в игре или кнопка «Модули клиента»",
                 6, height - 10, Theme.TEXT_MUTED, false);
     }
 

@@ -30,6 +30,7 @@ public class CritEffectModule extends Module {
 
     public CritEffectModule() {
         super("CritEffect", "Криты по любой сущности", Category.VISUAL);
+        setEnabled(true);
     }
 
     @Override

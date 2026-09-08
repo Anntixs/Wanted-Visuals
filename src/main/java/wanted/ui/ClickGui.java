@@ -51,8 +51,16 @@ public class ClickGui extends Screen {
     private Setting draggedSetting;
     private int draggedComponent;
 
+    /** Экран, куда вернуться при закрытии (из главного меню — обратно в меню). */
+    private final net.minecraft.client.gui.screen.Screen parent;
+
     public ClickGui() {
+        this(null);
+    }
+
+    public ClickGui(net.minecraft.client.gui.screen.Screen parent) {
         super(Text.literal("Wanted Visuals"));
+        this.parent = parent;
     }
 
     @Override
@@ -63,7 +71,11 @@ public class ClickGui extends Screen {
     @Override
     public void close() {
         wanted.config.ConfigManager.save();
-        super.close();
+        if (parent != null) {
+            client.setScreen(parent);
+        } else {
+            super.close();
+        }
     }
 
     private void layout() {
