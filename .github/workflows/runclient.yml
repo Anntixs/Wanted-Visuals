@@ -8,6 +8,7 @@ on:
 jobs:
   runclient:
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
 
@@ -27,38 +28,53 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y xvfb libgl1 libglu1-mesa mesa-utils libxi6 libxcursor1 libxrandr2 libxinerama1
 
-      - name: Launch client headless
-        # Клиент не должен сам завершаться, поэтому просто ждём и смотрим, упал ли он.
+      - name: Launch client and wait for the main menu
         run: |
-          set +e
+          set -uo pipefail
+          rm -rf run/logs
+          # Клиент запускаем в фоне: ждём в логе признак, что игра дошла до меню.
           xvfb-run -a --server-args="-screen 0 1280x720x24" \
-            timeout 240 gradle runClient --no-daemon > run-output.log 2>&1
-          code=$?
-          set -e
-          echo "exit=$code"
-          echo "CLIENT_EXIT=$code" >> "$GITHUB_ENV"
-          if [ "$code" != "124" ]; then
-            echo "::error::client exited early with code $code (crash)"
-          fi
+            gradle runClient --no-daemon > run-output.log 2>&1 &
+          gradle_pid=$!
+
+          ok=0
+          for i in $(seq 1 90); do
+            if grep -qE "Sound engine started|Created: .*minecraft:textures/atlas" run/logs/latest.log 2>/dev/null; then
+              ok=1
+              echo "клиент дошёл до главного меню"
+              break
+            fi
+            if ! kill -0 "$gradle_pid" 2>/dev/null; then
+              echo "процесс клиента завершился раньше времени"
+              break
+            fi
+            sleep 5
+          done
+
+          # Гасим клиент в любом случае, чтобы шаг не висел.
+          kill -9 "$gradle_pid" 2>/dev/null || true
+          pkill -9 -f "net.fabricmc.devlaunchinjector" 2>/dev/null || true
+          pkill -9 -f "GradleWrapperMain|GradleDaemon" 2>/dev/null || true
+          sleep 2
+
+          echo "MENU_REACHED=$ok" >> "$GITHUB_ENV"
 
       - name: Show client log
         if: always()
         run: |
           echo "===== gradle/run output (tail) ====="
-          tail -n 200 run-output.log || true
+          tail -n 120 run-output.log || true
           echo "===== latest.log (tail) ====="
-          tail -n 200 run/logs/latest.log 2>/dev/null || echo "no latest.log"
+          tail -n 120 run/logs/latest.log 2>/dev/null || echo "no latest.log"
           echo "===== crash reports ====="
           for f in run/crash-reports/*; do
             echo "--- $f"
             head -n 120 "$f"
           done 2>/dev/null || echo "no crash reports"
 
-      - name: Fail if the client crashed
+      - name: Fail if the client never reached the menu
         if: always()
-        run: |
-          # 124 = клиент дожил до таймаута, то есть не упал.
-          test "$CLIENT_EXIT" = "124" || exit 1
+        run: test "$MENU_REACHED" = "1"
 
       - name: Upload logs
         if: always()
