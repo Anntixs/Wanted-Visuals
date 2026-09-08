@@ -50,7 +50,7 @@ jobs:
 
           ok=0
           for i in $(seq 1 90); do
-            if grep -qE "Sound engine started" run/logs/latest.log 2>/dev/null; then
+            if grep -qE "Sound engine started|Created: .*minecraft:textures/atlas" run/logs/latest.log 2>/dev/null; then
               ok=1
               echo "клиент дошёл до главного меню"
               break
@@ -64,7 +64,7 @@ jobs:
 
           if [ "$ok" = "1" ]; then
             # Даём меню отрисоваться и снимаем экран.
-            sleep 15
+            sleep 30
             ffmpeg -y -f x11grab -video_size 1280x720 -i :99 -frames:v 1 menu.png 2>/dev/null || true
             ls -la menu.png || echo "скриншот не снят"
           fi
