@@ -36,6 +36,10 @@ jobs:
           set -uo pipefail
           rm -rf run/logs
 
+          # Без этого свежий профиль показывает экран онбординга вместо главного меню.
+          mkdir -p run
+          printf 'onboardAccessibility:false\n' > run/options.txt
+
           # Свой Xvfb на фиксированном дисплее, чтобы можно было снять кадр.
           Xvfb :99 -screen 0 1280x720x24 &
           sleep 3
@@ -46,7 +50,7 @@ jobs:
 
           ok=0
           for i in $(seq 1 90); do
-            if grep -qE "Sound engine started|Created: .*minecraft:textures/atlas" run/logs/latest.log 2>/dev/null; then
+            if grep -qE "Sound engine started" run/logs/latest.log 2>/dev/null; then
               ok=1
               echo "клиент дошёл до главного меню"
               break
