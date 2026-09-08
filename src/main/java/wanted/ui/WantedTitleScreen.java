@@ -55,47 +55,60 @@ public class WantedTitleScreen extends Screen {
         // super.render сам вызывает renderBackground, поэтому идёт первым — иначе фон лёг бы поверх UI.
         super.render(context, mouseX, mouseY, delta);
 
-        float panelX = width * 0.08f;
-        float titleY = height * 0.22f;
+        float panelX = Math.max(8f, width * 0.08f);
+        float titleScale = clamp(height / 62f, 2.0f, 4.0f);
+        float titleY = height * 0.16f;
 
-        // Заголовок
         context.getMatrices().push();
         context.getMatrices().translate(panelX, titleY, 0);
-        context.getMatrices().scale(4.0f, 4.0f, 1f);
+        context.getMatrices().scale(titleScale, titleScale, 1f);
         context.drawText(textRenderer, "WANTED", 0, 0, Theme.TEXT, false);
         context.getMatrices().pop();
 
+        float subtitleScale = clamp(titleScale * 0.4f, 1.0f, 1.6f);
+        float subtitleY = titleY + textRenderer.fontHeight * titleScale + 2;
         context.getMatrices().push();
-        context.getMatrices().translate(panelX + 2, titleY + 36, 0);
-        context.getMatrices().scale(1.6f, 1.6f, 1f);
+        context.getMatrices().translate(panelX + 1, subtitleY, 0);
+        context.getMatrices().scale(subtitleScale, subtitleScale, 1f);
         context.drawText(textRenderer, "指名手配 · VISUALS", 0, 0, Theme.ACCENT, false);
         context.getMatrices().pop();
 
-        Render2D.horizontalGradient(context, panelX, titleY + 58, 220, 1,
+        float ruleY = subtitleY + textRenderer.fontHeight * subtitleScale + 5;
+        Render2D.horizontalGradient(context, panelX, ruleY, Math.min(220f, width * 0.45f), 1,
                 Theme.ACCENT, 0x00FF3B5C);
 
-        // Кнопки
-        float buttonY = titleY + 74;
+        // Кнопки: шаг подбирается так, чтобы весь список влез над нижними подписями.
+        float footerTop = height - 22f;
+        float buttonsTop = ruleY + 10;
+        float available = Math.max(40f, footerTop - buttonsTop);
+        float step = Math.min(30f, available / buttons.size());
+        float buttonHeight = Math.min(24f, step - 4f);
+        float buttonWidth = Math.min(190f, width * 0.42f);
+
+        float buttonY = buttonsTop;
         for (MenuButton button : buttons) {
-            button.render(context, panelX, buttonY, mouseX, mouseY);
-            buttonY += 30;
+            button.render(context, panelX, buttonY, buttonWidth, buttonHeight, mouseX, mouseY);
+            buttonY += step;
         }
 
-        // Информационная карточка справа
         renderInfoCard(context);
 
-        context.drawText(textRenderer, "Minecraft 1.21.1 · Fabric", 6, height - 20, Theme.TEXT_MUTED, false);
-        context.drawText(textRenderer, "Wanted Visuals v1.0 — только визуал, клиент-сайд",
+        context.drawText(textRenderer, "Minecraft 1.21.1 · Fabric", 6, height - 19, Theme.TEXT_MUTED, false);
+        context.drawText(textRenderer, "Wanted Visuals v1.0 — только визуал",
                 6, height - 10, Theme.TEXT_MUTED, false);
+    }
+
+    private static float clamp(float value, float min, float max) {
+        return Math.max(min, Math.min(max, value));
     }
 
     private void renderBackdrop(DrawContext context) {
         context.fillGradient(0, 0, width, height, BG_TOP, BG_BOTTOM);
 
         // «Восходящее солнце» — большой мягкий круг справа.
-        float sunX = width * 0.74f;
-        float sunY = height * 0.42f;
-        float radius = Math.min(width, height) * 0.26f;
+        float sunX = width * 0.76f;
+        float sunY = height * 0.55f;
+        float radius = Math.min(width, height) * 0.22f;
 
         for (int i = 10; i > 0; i--) {
             float r = radius * (1f + i * 0.06f);
@@ -116,6 +129,9 @@ public class WantedTitleScreen extends Screen {
     }
 
     private void renderInfoCard(DrawContext context) {
+        // На маленьком экране карточка налезала бы на заголовок и кнопки.
+        if (width < 380 || height < 200) return;
+
         float cardWidth = 150;
         float x = width - cardWidth - 14;
         float y = 14;
@@ -151,15 +167,14 @@ public class WantedTitleScreen extends Screen {
 
     /** Кнопка меню с плавной анимацией наведения. */
     private final class MenuButton {
-        private static final float WIDTH = 190;
-        private static final float HEIGHT = 24;
-
         private final String label;
         private final String kanji;
         private final Runnable action;
 
         private float x;
         private float y;
+        private float width;
+        private float height;
         private float hover;
 
         private MenuButton(String label, String kanji, Runnable action) {
@@ -168,27 +183,34 @@ public class WantedTitleScreen extends Screen {
             this.action = action;
         }
 
-        private void render(DrawContext context, float x, float y, int mouseX, int mouseY) {
+        private void render(DrawContext context, float x, float y, float width, float height,
+                            int mouseX, int mouseY) {
             this.x = x;
             this.y = y;
+            this.width = width;
+            this.height = height;
 
             boolean isHovered = hovered(mouseX, mouseY);
             hover = Render2D.approach(hover, isHovered ? 1f : 0f, 0.2f);
 
-            Render2D.roundedRect(context, x, y, WIDTH + 20 * hover, HEIGHT, 6,
+            Render2D.roundedRect(context, x, y, width + 16 * hover, height, 6,
                     Theme.lerpColor(0x66141620, Theme.withAlpha(Theme.ACCENT, 0.22f), hover));
-            Render2D.roundedRect(context, x, y, 2 + 2 * hover, HEIGHT, 1.5f,
+            Render2D.roundedRect(context, x, y, 2 + 2 * hover, height, 1.5f,
                     Theme.lerpColor(0x55FFFFFF, Theme.ACCENT, hover));
 
-            context.drawText(textRenderer, label, (int) (x + 12 + 4 * hover), (int) y + 8,
+            int textY = (int) (y + (height - textRenderer.fontHeight) / 2f);
+            context.drawText(textRenderer, label, (int) (x + 10 + 4 * hover), textY,
                     Theme.lerpColor(Theme.TEXT_DIM, Theme.TEXT, hover), false);
-            context.drawText(textRenderer, kanji,
-                    (int) (x + WIDTH - 8 - textRenderer.getWidth(kanji) + 20 * hover), (int) y + 8,
-                    Theme.lerpColor(Theme.TEXT_MUTED, Theme.ACCENT, hover), false);
+
+            int kanjiX = (int) (x + width - 8 - textRenderer.getWidth(kanji) + 16 * hover);
+            if (kanjiX > x + 12 + textRenderer.getWidth(label)) {
+                context.drawText(textRenderer, kanji, kanjiX, textY,
+                        Theme.lerpColor(Theme.TEXT_MUTED, Theme.ACCENT, hover), false);
+            }
         }
 
         private boolean hovered(double mouseX, double mouseY) {
-            return Render2D.hovered(mouseX, mouseY, x, y, WIDTH, HEIGHT);
+            return Render2D.hovered(mouseX, mouseY, x, y, width, height);
         }
     }
 }

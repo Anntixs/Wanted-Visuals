@@ -21,10 +21,10 @@ import java.util.List;
  * справа — панель настроек выбранного модуля.
  */
 public class ClickGui extends Screen {
-    private static final float PANEL_WIDTH = 470f;
-    private static final float PANEL_HEIGHT = 280f;
+    private static final float MAX_PANEL_WIDTH = 470f;
+    private static final float MAX_PANEL_HEIGHT = 280f;
     private static final float RAIL_WIDTH = 58f;
-    private static final float SETTINGS_WIDTH = 168f;
+    private static final float MAX_SETTINGS_WIDTH = 168f;
     private static final float HEADER_HEIGHT = 40f;
     private static final float CARD_HEIGHT = 30f;
 
@@ -35,6 +35,10 @@ public class ClickGui extends Screen {
 
     private float panelX;
     private float panelY;
+    /** Размеры пересчитываются под экран: на GUI scale 2-3 фиксированная панель не влезала. */
+    private float panelWidth;
+    private float panelHeight;
+    private float settingsWidth;
     private float railIndicator = -1f;
     private float listScroll;
     private float settingsScroll;
@@ -63,8 +67,11 @@ public class ClickGui extends Screen {
     }
 
     private void layout() {
-        panelX = (width - PANEL_WIDTH) / 2f;
-        panelY = (height - PANEL_HEIGHT) / 2f;
+        panelWidth = Math.min(MAX_PANEL_WIDTH, width - 16f);
+        panelHeight = Math.min(MAX_PANEL_HEIGHT, height - 16f);
+        settingsWidth = Math.min(MAX_SETTINGS_WIDTH, panelWidth * 0.36f);
+        panelX = (width - panelWidth) / 2f;
+        panelY = (height - panelHeight) / 2f;
     }
 
     @Override
@@ -79,8 +86,8 @@ public class ClickGui extends Screen {
         // super.render сам вызывает renderBackground — иначе фон рисуется поверх панели.
         super.render(context, mouseX, mouseY, delta);
 
-        Render2D.shadow(context, panelX, panelY, PANEL_WIDTH, PANEL_HEIGHT, 10);
-        Render2D.roundedRect(context, panelX, panelY, PANEL_WIDTH, PANEL_HEIGHT, 10, Theme.PANEL);
+        Render2D.shadow(context, panelX, panelY, panelWidth, panelHeight, 10);
+        Render2D.roundedRect(context, panelX, panelY, panelWidth, panelHeight, 10, Theme.PANEL);
 
         renderRail(context, mouseX, mouseY);
         renderHeader(context, mouseX, mouseY);
@@ -91,7 +98,7 @@ public class ClickGui extends Screen {
     // ------------------------------------------------------------------ рейл
 
     private void renderRail(DrawContext context, int mouseX, int mouseY) {
-        Render2D.roundedRect(context, panelX, panelY, RAIL_WIDTH, PANEL_HEIGHT, 10, Theme.RAIL);
+        Render2D.roundedRect(context, panelX, panelY, RAIL_WIDTH, panelHeight, 10, Theme.RAIL);
 
         Category[] categories = Category.values();
         float y = panelY + HEADER_HEIGHT + 6;
@@ -119,7 +126,7 @@ public class ClickGui extends Screen {
         railIndicator = Render2D.approach(railIndicator, targetIndicator, 0.3f);
         Render2D.roundedRect(context, panelX + 1.5f, railIndicator + 8, 3, 24, 1.5f, selectedCategory.getAccent());
 
-        drawCentered(context, "指名", panelX + RAIL_WIDTH / 2f, panelY + PANEL_HEIGHT - 26,
+        drawCentered(context, "指名", panelX + RAIL_WIDTH / 2f, panelY + panelHeight - 26,
                 Theme.TEXT_MUTED, 1.0f);
     }
 
@@ -127,7 +134,7 @@ public class ClickGui extends Screen {
 
     private void renderHeader(DrawContext context, int mouseX, int mouseY) {
         float x = panelX + RAIL_WIDTH;
-        float width = PANEL_WIDTH - RAIL_WIDTH;
+        float width = panelWidth - RAIL_WIDTH;
 
         Render2D.horizontalGradient(context, x, panelY + HEADER_HEIGHT - 1, width, 1,
                 Theme.withAlpha(selectedCategory.getAccent(), 0.65f), 0x00000000);
@@ -145,8 +152,8 @@ public class ClickGui extends Screen {
                 Theme.TEXT_MUTED, false);
 
         // Поле поиска
-        float searchWidth = 150;
-        float searchX = panelX + PANEL_WIDTH - searchWidth - 12;
+        float searchWidth = Math.min(150f, panelWidth * 0.32f);
+        float searchX = panelX + panelWidth - searchWidth - 12;
         float searchY = panelY + 11;
         boolean hovered = Render2D.hovered(mouseX, mouseY, searchX, searchY, searchWidth, 18);
 
@@ -183,7 +190,7 @@ public class ClickGui extends Screen {
     }
 
     private float listWidth() {
-        return PANEL_WIDTH - RAIL_WIDTH - SETTINGS_WIDTH - 28;
+        return panelWidth - RAIL_WIDTH - settingsWidth - 28;
     }
 
     private float contentY() {
@@ -191,7 +198,7 @@ public class ClickGui extends Screen {
     }
 
     private float contentHeight() {
-        return PANEL_HEIGHT - HEADER_HEIGHT - 18;
+        return panelHeight - HEADER_HEIGHT - 18;
     }
 
     private void renderModules(DrawContext context, int mouseX, int mouseY) {
@@ -252,7 +259,7 @@ public class ClickGui extends Screen {
     // ------------------------------------------------------------ настройки
 
     private float settingsX() {
-        return panelX + PANEL_WIDTH - SETTINGS_WIDTH - 10;
+        return panelX + panelWidth - settingsWidth - 10;
     }
 
     private void renderSettings(DrawContext context, int mouseX, int mouseY) {
@@ -260,28 +267,28 @@ public class ClickGui extends Screen {
         float top = contentY();
         float height = contentHeight();
 
-        Render2D.roundedRect(context, x, top, SETTINGS_WIDTH, height, 8, Theme.PANEL_SOFT);
+        Render2D.roundedRect(context, x, top, settingsWidth, height, 8, Theme.PANEL_SOFT);
 
         if (selectedModule == null) {
-            drawCentered(context, "выберите модуль", x + SETTINGS_WIDTH / 2f, top + height / 2f - 8,
+            drawCentered(context, "выберите модуль", x + settingsWidth / 2f, top + height / 2f - 8,
                     Theme.TEXT_MUTED, 1f);
-            drawCentered(context, "設定", x + SETTINGS_WIDTH / 2f, top + height / 2f + 6,
+            drawCentered(context, "設定", x + settingsWidth / 2f, top + height / 2f + 6,
                     Theme.TEXT_MUTED, 1f);
             return;
         }
 
-        context.enableScissor((int) x, (int) top, (int) (x + SETTINGS_WIDTH), (int) (top + height));
+        context.enableScissor((int) x, (int) top, (int) (x + settingsWidth), (int) (top + height));
 
         float y = top + 10 - settingsScroll;
         context.drawText(textRenderer, selectedModule.getName(), (int) x + 10, (int) y, Theme.TEXT, false);
         y += 11;
-        context.drawText(textRenderer, trim(selectedModule.getDescription(), (int) SETTINGS_WIDTH - 20),
+        context.drawText(textRenderer, trim(selectedModule.getDescription(), (int) settingsWidth - 20),
                 (int) x + 10, (int) y, Theme.TEXT_MUTED, false);
         y += 16;
 
         for (Setting setting : selectedModule.getSettings()) {
             if (!setting.isVisible()) continue;
-            y = renderSetting(context, setting, x + 10, y, SETTINGS_WIDTH - 20, mouseX, mouseY);
+            y = renderSetting(context, setting, x + 10, y, settingsWidth - 20, mouseX, mouseY);
         }
 
         context.disableScissor();
@@ -369,8 +376,9 @@ public class ClickGui extends Screen {
         }
 
         // Поиск
-        float searchX = panelX + PANEL_WIDTH - 162;
-        searchFocused = Render2D.hovered(mouseX, mouseY, searchX, panelY + 11, 150, 18);
+        float searchWidth = Math.min(150f, panelWidth * 0.32f);
+        float searchX = panelX + panelWidth - searchWidth - 12;
+        searchFocused = Render2D.hovered(mouseX, mouseY, searchX, panelY + 11, searchWidth, 18);
         if (searchFocused) return true;
 
         if (handleModuleClick(mouseX, mouseY, button)) return true;
@@ -409,9 +417,9 @@ public class ClickGui extends Screen {
         if (selectedModule == null) return false;
 
         float x = settingsX() + 10;
-        float width = SETTINGS_WIDTH - 20;
+        float width = settingsWidth - 20;
         float top = contentY();
-        if (!Render2D.hovered(mouseX, mouseY, settingsX(), top, SETTINGS_WIDTH, contentHeight())) return false;
+        if (!Render2D.hovered(mouseX, mouseY, settingsX(), top, settingsWidth, contentHeight())) return false;
 
         float y = top + 10 - settingsScroll + 27;
         for (Setting setting : selectedModule.getSettings()) {
@@ -464,13 +472,13 @@ public class ClickGui extends Screen {
     public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
         if (draggedSetting instanceof NumberSetting number && draggedComponent == 0) {
             float x = settingsX() + 10;
-            float width = SETTINGS_WIDTH - 20;
+            float width = settingsWidth - 20;
             number.setFraction((mouseX - x) / width);
             return true;
         }
         if (draggedSetting instanceof ColorSetting color) {
             float x = settingsX() + 10;
-            float width = SETTINGS_WIDTH - 20;
+            float width = settingsWidth - 20;
             float fraction = (float) Math.max(0, Math.min(1, (mouseX - x) / width));
             if (draggedComponent == 1) color.setHue(fraction);
             if (draggedComponent == 2) color.setAlpha(fraction);
@@ -490,7 +498,7 @@ public class ClickGui extends Screen {
         layout();
         float amount = (float) verticalAmount * 14f;
 
-        if (Render2D.hovered(mouseX, mouseY, settingsX(), contentY(), SETTINGS_WIDTH, contentHeight())) {
+        if (Render2D.hovered(mouseX, mouseY, settingsX(), contentY(), settingsWidth, contentHeight())) {
             settingsScroll = Math.max(0, settingsScroll - amount);
         } else {
             float contentSize = visibleModules().size() * (CARD_HEIGHT + 5);
