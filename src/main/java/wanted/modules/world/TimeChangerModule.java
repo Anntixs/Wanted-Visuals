@@ -1,11 +1,16 @@
 package wanted.modules.world;
 
+import net.minecraft.client.world.ClientWorld;
 import wanted.module.Category;
 import wanted.module.Module;
 import wanted.setting.ModeSetting;
 import wanted.setting.NumberSetting;
 
-/** Клиентская фиксация времени суток (влияет только на отрисовку). */
+/**
+ * Клиентская фиксация времени суток.
+ * Пишем время напрямую в свойства клиентского мира — миксин не нужен,
+ * а сервер при желании перезапишет его своим пакетом.
+ */
 public class TimeChangerModule extends Module {
     public final ModeSetting preset = register(new ModeSetting("Время", "Фиксированное время суток",
             "Закат", "Рассвет", "День", "Закат", "Ночь", "Своё"));
@@ -19,6 +24,14 @@ public class TimeChangerModule extends Module {
     @Override
     public String getInfo() {
         return preset.get();
+    }
+
+    @Override
+    public void onTick() {
+        if (mc.world == null) return;
+        if (mc.world.getLevelProperties() instanceof ClientWorld.Properties properties) {
+            properties.setTimeOfDay(getTime());
+        }
     }
 
     public long getTime() {

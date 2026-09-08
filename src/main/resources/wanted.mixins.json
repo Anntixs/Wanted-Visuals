@@ -5,8 +5,7 @@
   "client": [
     "ClientWorldMixin",
     "SimpleOptionAccessor",
-    "TitleScreenMixin",
-    "WorldMixin"
+    "TitleScreenMixin"
   ],
   "injectors": {
     "defaultRequire": 1

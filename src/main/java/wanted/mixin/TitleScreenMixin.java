@@ -21,6 +21,6 @@ public class TitleScreenMixin {
         if (client.currentScreen instanceof WantedTitleScreen) return;
 
         ci.cancel();
-        client.setScreen(new WantedTitleScreen());
+        client.execute(() -> client.setScreen(new WantedTitleScreen()));
     }
 }

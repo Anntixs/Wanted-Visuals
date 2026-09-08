@@ -33,8 +33,13 @@ jobs:
           set +e
           xvfb-run -a --server-args="-screen 0 1280x720x24" \
             timeout 240 gradle runClient --no-daemon > run-output.log 2>&1
-          echo "exit=$?"
+          code=$?
           set -e
+          echo "exit=$code"
+          echo "CLIENT_EXIT=$code" >> "$GITHUB_ENV"
+          if [ "$code" != "124" ]; then
+            echo "::error::client exited early with code $code (crash)"
+          fi
 
       - name: Show client log
         if: always()
@@ -48,6 +53,12 @@ jobs:
             echo "--- $f"
             head -n 120 "$f"
           done 2>/dev/null || echo "no crash reports"
+
+      - name: Fail if the client crashed
+        if: always()
+        run: |
+          # 124 = клиент дожил до таймаута, то есть не упал.
+          test "$CLIENT_EXIT" = "124" || exit 1
 
       - name: Upload logs
         if: always()
