@@ -1,9 +1,11 @@
 package wanted.module;
 
 import wanted.modules.hud.ArrayListModule;
+import wanted.modules.hud.ThemeModule;
 import wanted.modules.hud.CoordinatesModule;
 import wanted.modules.hud.WatermarkModule;
 import wanted.modules.visual.GlowModule;
+import wanted.modules.visual.CritEffectModule;
 import wanted.modules.visual.EspModule;
 import wanted.modules.visual.FullbrightModule;
 import wanted.modules.visual.KasaHatModule;
@@ -37,6 +39,8 @@ public final class ModuleManager {
     private static TimeChangerModule timeChanger;
     private static WeatherModule weather;
     private static ArrayListModule arrayList;
+    private static ThemeModule theme;
+    private static CritEffectModule critEffect;
     private static WatermarkModule watermark;
 
     private ModuleManager() {
@@ -51,6 +55,7 @@ public final class ModuleManager {
         add(tracers = new TracersModule());
         add(nameTags = new NameTagsModule());
         add(trail = new TrailModule());
+        add(critEffect = new CritEffectModule());
         add(new FullbrightModule());
         add(zoom = new ZoomModule());
 
@@ -62,6 +67,7 @@ public final class ModuleManager {
         add(watermark = new WatermarkModule());
         add(arrayList = new ArrayListModule());
         add(new CoordinatesModule());
+        add(theme = new ThemeModule());
     }
 
     private static void add(Module module) {
@@ -96,6 +102,9 @@ public final class ModuleManager {
     }
 
     public static void onTick() {
+        // Тема должна применяться даже когда модуль выключен — это просто выбор палитры.
+        if (theme != null) theme.sync();
+
         for (Module module : MODULES) {
             float target = module.isEnabled() ? 1f : 0f;
             module.setAnimation(module.getAnimation() + (target - module.getAnimation()) * 0.25f);
@@ -155,6 +164,14 @@ public final class ModuleManager {
 
     public static WeatherModule weather() {
         return weather;
+    }
+
+    public static ThemeModule theme() {
+        return theme;
+    }
+
+    public static CritEffectModule critEffect() {
+        return critEffect;
     }
 
     public static ArrayListModule arrayList() {

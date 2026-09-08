@@ -22,7 +22,7 @@ public class WatermarkModule extends Module {
         if (!isEnabled()) return;
 
         String title = "WANTED";
-        String kanji = "指名手配";
+        String tag = "VISUALS";
         StringBuilder stats = new StringBuilder();
         if (showFps.get()) stats.append(mc.getCurrentFps()).append(" fps");
         if (showPing.get() && mc.getNetworkHandler() != null && mc.player != null) {
@@ -34,18 +34,18 @@ public class WatermarkModule extends Module {
         }
 
         int titleWidth = mc.textRenderer.getWidth(title);
-        int kanjiWidth = mc.textRenderer.getWidth(kanji);
+        int tagWidth = mc.textRenderer.getWidth(tag);
         int statsWidth = stats.isEmpty() ? 0 : mc.textRenderer.getWidth(stats.toString());
-        float width = 14 + titleWidth + 6 + kanjiWidth + (statsWidth > 0 ? statsWidth + 12 : 0) + 10;
+        float width = 14 + titleWidth + 6 + tagWidth + (statsWidth > 0 ? statsWidth + 12 : 0) + 10;
 
         Render2D.roundedRect(context, 6, 6, width, 20, 6, Theme.PANEL);
         Render2D.roundedRect(context, 6, 6, 3, 20, 1.5f, accent.getArgb());
 
         context.drawText(mc.textRenderer, title, 15, 12, Theme.TEXT, false);
-        context.drawText(mc.textRenderer, kanji, 15 + titleWidth + 6, 12, accent.getArgb(), false);
+        context.drawText(mc.textRenderer, tag, 15 + titleWidth + 6, 12, accent.getArgb(), false);
         if (statsWidth > 0) {
             context.drawText(mc.textRenderer, stats.toString(),
-                    15 + titleWidth + 6 + kanjiWidth + 10, 12, Theme.TEXT_DIM, false);
+                    15 + titleWidth + 6 + tagWidth + 10, 12, Theme.TEXT_DIM, false);
         }
     }
 }

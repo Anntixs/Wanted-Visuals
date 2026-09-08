@@ -1,20 +1,20 @@
 package wanted.module;
 
-/** Категории с японскими глифами для боковой панели ClickGUI. */
+import wanted.ui.Theme;
+
+/** Категории для боковой панели ClickGUI. */
 public enum Category {
-    VISUAL("Visual", "視", 0xFFFF3B5C),
-    WORLD("World", "空", 0xFF3BB2FF),
-    HUD("HUD", "面", 0xFFFFC53B),
-    MISC("Misc", "他", 0xFF9B6BFF);
+    VISUAL("Visual", "V"),
+    WORLD("World", "W"),
+    HUD("HUD", "H"),
+    MISC("Misc", "M");
 
     private final String displayName;
     private final String glyph;
-    private final int accent;
 
-    Category(String displayName, String glyph, int accent) {
+    Category(String displayName, String glyph) {
         this.displayName = displayName;
         this.glyph = glyph;
-        this.accent = accent;
     }
 
     public String getDisplayName() {
@@ -25,7 +25,13 @@ public enum Category {
         return glyph;
     }
 
+    /** Цвет берётся из активной темы, поэтому переключение палитры видно сразу. */
     public int getAccent() {
-        return accent;
+        return switch (this) {
+            case VISUAL -> Theme.CATEGORY_VISUAL;
+            case WORLD -> Theme.CATEGORY_WORLD;
+            case HUD -> Theme.CATEGORY_HUD;
+            case MISC -> Theme.CATEGORY_MISC;
+        };
     }
 }

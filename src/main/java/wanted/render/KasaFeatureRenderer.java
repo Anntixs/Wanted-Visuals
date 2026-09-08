@@ -16,14 +16,13 @@ import wanted.module.ModuleManager;
 import wanted.modules.visual.KasaHatModule;
 
 /**
- * Рисует японскую шляпу (каса) поверх головы игрока.
- * Геометрия строится процедурно: набор колец от полей к макушке.
+ * Шляпа над головой игрока. Каркасный режим рисует линиями (меридианы + кольца),
+ * режим «Каркас+сетка» добавляет решётку в плоскости полей, «Заливка» — сплошные грани.
  */
 public class KasaFeatureRenderer
         extends FeatureRenderer<AbstractClientPlayerEntity, PlayerEntityModel<AbstractClientPlayerEntity>> {
 
     private static final Identifier TEXTURE = Identifier.of("wanted", "textures/entity/kasa.png");
-    private static final int SEGMENTS = 24;
     private static final int RINGS = 6;
 
     public KasaFeatureRenderer(
@@ -40,9 +39,6 @@ public class KasaFeatureRenderer
         if (module == null || !module.isEnabled()) return;
         if (entity.isInvisible() || entity.isSpectator()) return;
         if (!shouldRenderFor(module, entity)) return;
-
-        int usedLight = module.glow.get() ? LightmapTextureManager.MAX_LIGHT_COORDINATE : light;
-        VertexConsumer buffer = vertexConsumers.getBuffer(RenderLayer.getEntityCutoutNoCull(TEXTURE));
 
         matrices.push();
         getContextModel().head.rotate(matrices);
@@ -61,20 +57,44 @@ public class KasaFeatureRenderer
 
         float radius = 0.45f * module.size.getFloat();
         float height = module.height.getFloat();
-        int color = module.color.getArgb();
+        float curve = curveFor(module.shape.get());
+        int segments = module.segments.getInt();
 
-        switch (module.shape.get()) {
-            case "Jingasa" -> buildDome(matrices, buffer, usedLight, radius * 1.1f, height * 0.5f, 2.2f, color);
-            case "Sandogasa" -> buildDome(matrices, buffer, usedLight, radius, height, 1.0f, color);
-            case "Halo" -> buildRing(matrices, buffer, usedLight, radius, radius * 0.75f, height, color);
-            default -> buildDome(matrices, buffer, usedLight, radius, height, 1.8f, color);
-        }
-
-        if (module.trim.get() && !module.shape.is("Halo")) {
-            buildRing(matrices, buffer, usedLight, radius * 1.04f, radius * 0.92f, 0.005f, module.trimColor.getArgb());
+        if (module.style.is("Заливка")) {
+            int usedLight = module.glow.get() ? LightmapTextureManager.MAX_LIGHT_COORDINATE : light;
+            VertexConsumer buffer = vertexConsumers.getBuffer(RenderLayer.getEntityCutoutNoCull(TEXTURE));
+            if (module.shape.is("Кольцо")) {
+                buildSolidRing(matrices, buffer, usedLight, segments, radius, radius * 0.75f, height,
+                        module.color.getArgb());
+            } else {
+                buildSolidDome(matrices, buffer, usedLight, segments, radius, height, curve,
+                        module.color.getArgb());
+            }
+            if (module.trim.get() && !module.shape.is("Кольцо")) {
+                buildSolidRing(matrices, buffer, usedLight, segments,
+                        radius * 1.04f, radius * 0.92f, 0.005f, module.trimColor.getArgb());
+            }
+        } else {
+            VertexConsumer lines = vertexConsumers.getBuffer(RenderLayer.getLines());
+            buildWireDome(matrices, lines, segments, radius, height, curve, module.color.getArgb(),
+                    module.shape.is("Кольцо"));
+            if (module.style.is("Каркас+сетка")) {
+                buildGrid(matrices, lines, radius, module.gridColor.getArgb());
+            }
+            if (module.trim.get()) {
+                buildWireCircle(matrices, lines, segments, radius * 1.04f, 0.005f, module.trimColor.getArgb());
+            }
         }
 
         matrices.pop();
+    }
+
+    private static float curveFor(String shape) {
+        return switch (shape) {
+            case "Плоская" -> 2.6f;
+            case "Купол" -> 1.0f;
+            default -> 1.8f;
+        };
     }
 
     private boolean shouldRenderFor(KasaHatModule module, AbstractClientPlayerEntity entity) {
@@ -86,9 +106,95 @@ public class KasaFeatureRenderer
         };
     }
 
-    /** Купол каса: кольца от широких полей к макушке. */
-    private void buildDome(MatrixStack matrices, VertexConsumer buffer, int light,
-                           float radius, float height, float curve, int color) {
+    // ------------------------------------------------------------------ каркас
+
+    /** Меридианы от края полей к макушке плюс горизонтальные кольца. */
+    private void buildWireDome(MatrixStack matrices, VertexConsumer buffer, int segments,
+                               float radius, float height, float curve, int color, boolean ringOnly) {
+        MatrixStack.Entry entry = matrices.peek();
+
+        if (!ringOnly) {
+            for (int seg = 0; seg < segments; seg++) {
+                double angle = Math.PI * 2 * seg / segments;
+                float cos = (float) Math.cos(angle);
+                float sin = (float) Math.sin(angle);
+
+                float previousX = cos * radius;
+                float previousY = 0f;
+                float previousZ = sin * radius;
+
+                for (int ring = 1; ring <= RINGS; ring++) {
+                    float t = ring / (float) RINGS;
+                    float r = radius * (1f - t);
+                    float y = height * (float) Math.pow(t, 1.0 / curve);
+                    line(entry, buffer, color, previousX, previousY, previousZ, cos * r, y, sin * r);
+                    previousX = cos * r;
+                    previousY = y;
+                    previousZ = sin * r;
+                }
+            }
+        }
+
+        int ringCount = ringOnly ? 1 : RINGS;
+        for (int ring = 0; ring < ringCount; ring++) {
+            float t = ring / (float) RINGS;
+            float r = radius * (1f - t);
+            float y = height * (float) Math.pow(t, 1.0 / curve);
+            buildWireCircle(matrices, buffer, segments, r, y, color);
+        }
+    }
+
+    private void buildWireCircle(MatrixStack matrices, VertexConsumer buffer, int segments,
+                                 float radius, float y, int color) {
+        MatrixStack.Entry entry = matrices.peek();
+        for (int seg = 0; seg < segments; seg++) {
+            double a0 = Math.PI * 2 * seg / segments;
+            double a1 = Math.PI * 2 * (seg + 1) / segments;
+            line(entry, buffer, color,
+                    (float) Math.cos(a0) * radius, y, (float) Math.sin(a0) * radius,
+                    (float) Math.cos(a1) * radius, y, (float) Math.sin(a1) * radius);
+        }
+    }
+
+    /** Плоская решётка в плоскости полей, обрезанная по кругу. */
+    private void buildGrid(MatrixStack matrices, VertexConsumer buffer, float radius, int color) {
+        MatrixStack.Entry entry = matrices.peek();
+        int cells = 8;
+        float step = radius * 2f / cells;
+
+        for (int i = 0; i <= cells; i++) {
+            float offset = -radius + step * i;
+            float half = (float) Math.sqrt(Math.max(0f, radius * radius - offset * offset));
+            if (half <= 0.001f) continue;
+            line(entry, buffer, color, offset, 0f, -half, offset, 0f, half);
+            line(entry, buffer, color, -half, 0f, offset, half, 0f, offset);
+        }
+    }
+
+    private void line(MatrixStack.Entry entry, VertexConsumer buffer, int color,
+                      float x1, float y1, float z1, float x2, float y2, float z2) {
+        float a = ((color >> 24) & 0xFF) / 255f;
+        float r = ((color >> 16) & 0xFF) / 255f;
+        float g = ((color >> 8) & 0xFF) / 255f;
+        float b = (color & 0xFF) / 255f;
+
+        float nx = x2 - x1;
+        float ny = y2 - y1;
+        float nz = z2 - z1;
+        float length = (float) Math.sqrt(nx * nx + ny * ny + nz * nz);
+        if (length < 1.0E-5f) return;
+        nx /= length;
+        ny /= length;
+        nz /= length;
+
+        buffer.vertex(entry.getPositionMatrix(), x1, y1, z1).color(r, g, b, a).normal(entry, nx, ny, nz);
+        buffer.vertex(entry.getPositionMatrix(), x2, y2, z2).color(r, g, b, a).normal(entry, nx, ny, nz);
+    }
+
+    // ---------------------------------------------------------------- заливка
+
+    private void buildSolidDome(MatrixStack matrices, VertexConsumer buffer, int light, int segments,
+                                float radius, float height, float curve, int color) {
         MatrixStack.Entry entry = matrices.peek();
 
         for (int ring = 0; ring < RINGS; ring++) {
@@ -100,12 +206,11 @@ public class KasaFeatureRenderer
             float y0 = height * (float) Math.pow(t0, 1.0 / curve);
             float y1 = height * (float) Math.pow(t1, 1.0 / curve);
 
-            for (int seg = 0; seg < SEGMENTS; seg++) {
-                double a0 = Math.PI * 2 * seg / SEGMENTS;
-                double a1 = Math.PI * 2 * (seg + 1) / SEGMENTS;
-
-                float u0 = seg / (float) SEGMENTS;
-                float u1 = (seg + 1) / (float) SEGMENTS;
+            for (int seg = 0; seg < segments; seg++) {
+                double a0 = Math.PI * 2 * seg / segments;
+                double a1 = Math.PI * 2 * (seg + 1) / segments;
+                float u0 = seg / (float) segments;
+                float u1 = (seg + 1) / (float) segments;
 
                 quad(entry, buffer, light, color,
                         cos(a0) * r0, y0, sin(a0) * r0, u0, t0,
@@ -116,16 +221,15 @@ public class KasaFeatureRenderer
         }
     }
 
-    /** Плоское кольцо (кант по краю полей или «нимб»). */
-    private void buildRing(MatrixStack matrices, VertexConsumer buffer, int light,
-                           float outer, float inner, float y, int color) {
+    private void buildSolidRing(MatrixStack matrices, VertexConsumer buffer, int light, int segments,
+                                float outer, float inner, float y, int color) {
         MatrixStack.Entry entry = matrices.peek();
 
-        for (int seg = 0; seg < SEGMENTS; seg++) {
-            double a0 = Math.PI * 2 * seg / SEGMENTS;
-            double a1 = Math.PI * 2 * (seg + 1) / SEGMENTS;
-            float u0 = seg / (float) SEGMENTS;
-            float u1 = (seg + 1) / (float) SEGMENTS;
+        for (int seg = 0; seg < segments; seg++) {
+            double a0 = Math.PI * 2 * seg / segments;
+            double a1 = Math.PI * 2 * (seg + 1) / segments;
+            float u0 = seg / (float) segments;
+            float u1 = (seg + 1) / (float) segments;
 
             quad(entry, buffer, light, color,
                     cos(a0) * outer, y, sin(a0) * outer, u0, 0f,

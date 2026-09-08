@@ -14,9 +14,6 @@ import java.util.List;
 
 /** Кастомное главное меню: тёмный градиент, красное солнце, лепестки и свои кнопки. */
 public class WantedTitleScreen extends Screen {
-    private static final int BG_TOP = 0xFF0B0C10;
-    private static final int BG_BOTTOM = 0xFF1A0E14;
-
     private final Petals petals = new Petals(60);
     private final List<MenuButton> buttons = new ArrayList<>();
 
@@ -27,18 +24,18 @@ public class WantedTitleScreen extends Screen {
     @Override
     protected void init() {
         buttons.clear();
-        buttons.add(new MenuButton("Одиночная игра", "シングル",
+        buttons.add(new MenuButton("Одиночная игра", "SOLO",
                 () -> client.setScreen(new SelectWorldScreen(this))));
-        buttons.add(new MenuButton("Сетевая игра", "マルチ",
+        buttons.add(new MenuButton("Сетевая игра", "MULTI",
                 () -> client.setScreen(new MultiplayerScreen(this))));
-        buttons.add(new MenuButton("Настройки", "設定",
+        buttons.add(new MenuButton("Настройки", "OPTIONS",
                 () -> client.setScreen(new OptionsScreen(this, client.options))));
-        buttons.add(new MenuButton("Ванильное меню", "既定",
+        buttons.add(new MenuButton("Ванильное меню", "VANILLA",
                 () -> {
                     WantedClient.customMainMenu = false;
                     client.setScreen(new TitleScreen());
                 }));
-        buttons.add(new MenuButton("Выход", "終了", () -> client.scheduleStop()));
+        buttons.add(new MenuButton("Выход", "QUIT", () -> client.scheduleStop()));
     }
 
     /**
@@ -70,7 +67,7 @@ public class WantedTitleScreen extends Screen {
         context.getMatrices().push();
         context.getMatrices().translate(panelX + 1, subtitleY, 0);
         context.getMatrices().scale(subtitleScale, subtitleScale, 1f);
-        context.drawText(textRenderer, "指名手配 · VISUALS", 0, 0, Theme.ACCENT, false);
+        context.drawText(textRenderer, "VISUALS", 0, 0, Theme.ACCENT, false);
         context.getMatrices().pop();
 
         float ruleY = subtitleY + textRenderer.fontHeight * subtitleScale + 5;
@@ -103,7 +100,7 @@ public class WantedTitleScreen extends Screen {
     }
 
     private void renderBackdrop(DrawContext context) {
-        context.fillGradient(0, 0, width, height, BG_TOP, BG_BOTTOM);
+        context.fillGradient(0, 0, width, height, Theme.MENU_TOP, Theme.MENU_BOTTOM);
 
         // «Восходящее солнце» — большой мягкий круг справа.
         float sunX = width * 0.76f;
@@ -124,7 +121,7 @@ public class WantedTitleScreen extends Screen {
             Render2D.circle(context, x, y, 2.5f, Theme.withAlpha(Theme.ACCENT_ALT, 0.35f));
         }
 
-        petals.render(context, 0xFFB7C5);
+        petals.render(context, Theme.DECOR);
         context.fillGradient(0, height / 2, width, height, 0x00000000, 0x99000000);
     }
 
@@ -144,7 +141,8 @@ public class WantedTitleScreen extends Screen {
         context.drawText(textRenderer, "ClickGUI: RIGHT SHIFT", (int) x + 10, (int) y + 34, Theme.TEXT_DIM, false);
         context.drawText(textRenderer, "Модулей: " + wanted.module.ModuleManager.getModules().size(),
                 (int) x + 10, (int) y + 46, Theme.TEXT_DIM, false);
-        context.drawText(textRenderer, "指名手配", (int) x + 10, (int) y + 58, Theme.ACCENT, false);
+        context.drawText(textRenderer, Theme.getPalette().getDisplayName().toUpperCase(),
+                (int) x + 10, (int) y + 58, Theme.ACCENT, false);
     }
 
     @Override

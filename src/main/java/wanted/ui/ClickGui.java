@@ -77,7 +77,7 @@ public class ClickGui extends Screen {
     @Override
     public void renderBackground(DrawContext context, int mouseX, int mouseY, float delta) {
         context.fill(0, 0, width, height, Theme.BACKDROP);
-        petals.render(context, 0xFFB7C5);
+        petals.render(context, Theme.DECOR);
     }
 
     @Override
@@ -126,7 +126,7 @@ public class ClickGui extends Screen {
         railIndicator = Render2D.approach(railIndicator, targetIndicator, 0.3f);
         Render2D.roundedRect(context, panelX + 1.5f, railIndicator + 8, 3, 24, 1.5f, selectedCategory.getAccent());
 
-        drawCentered(context, "指名", panelX + RAIL_WIDTH / 2f, panelY + panelHeight - 26,
+        drawCentered(context, "WV", panelX + RAIL_WIDTH / 2f, panelY + panelHeight - 26,
                 Theme.TEXT_MUTED, 1.0f);
     }
 
@@ -146,7 +146,7 @@ public class ClickGui extends Screen {
         context.getMatrices().pop();
 
         int titleWidth = (int) (textRenderer.getWidth("WANTED") * 1.25f);
-        context.drawText(textRenderer, "指名手配", (int) x + 18 + titleWidth, (int) panelY + 14,
+        context.drawText(textRenderer, "VISUALS", (int) x + 18 + titleWidth, (int) panelY + 14,
                 selectedCategory.getAccent(), false);
         context.drawText(textRenderer, "v1.0 · 1.21.1", (int) x + 18 + titleWidth, (int) panelY + 25,
                 Theme.TEXT_MUTED, false);
@@ -272,7 +272,7 @@ public class ClickGui extends Screen {
         if (selectedModule == null) {
             drawCentered(context, "выберите модуль", x + settingsWidth / 2f, top + height / 2f - 8,
                     Theme.TEXT_MUTED, 1f);
-            drawCentered(context, "設定", x + settingsWidth / 2f, top + height / 2f + 6,
+            drawCentered(context, "SETTINGS", x + settingsWidth / 2f, top + height / 2f + 6,
                     Theme.TEXT_MUTED, 1f);
             return;
         }

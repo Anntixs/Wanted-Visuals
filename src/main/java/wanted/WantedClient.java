@@ -7,6 +7,7 @@ import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.fabricmc.fabric.api.client.rendering.v1.LivingEntityFeatureRendererRegistrationCallback;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
+import net.fabricmc.fabric.api.event.player.AttackEntityCallback;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.render.entity.PlayerEntityRenderer;
@@ -59,6 +60,14 @@ public class WantedClient implements ClientModInitializer {
                         helper.register(new KasaFeatureRenderer(playerRenderer));
                     }
                 });
+
+        // Эффект крита по любой сущности: событие приходит при атаке ЛКМ.
+        AttackEntityCallback.EVENT.register((player, world, hand, entity, hitResult) -> {
+            if (world.isClient && player == MinecraftClient.getInstance().player) {
+                ModuleManager.critEffect().onAttack(entity);
+            }
+            return net.minecraft.util.ActionResult.PASS;
+        });
 
         ClientLifecycleEvents.CLIENT_STOPPING.register(client -> ConfigManager.save());
 
