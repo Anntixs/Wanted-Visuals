@@ -41,9 +41,19 @@ public class WantedTitleScreen extends Screen {
         buttons.add(new MenuButton("Выход", "終了", () -> client.scheduleStop()));
     }
 
+    /**
+     * Свой фон вместо ванильного: Screen#renderBackground по умолчанию накладывает
+     * блюр и затемнение на весь кадр, из-за чего меню выглядело расфокусированным.
+     */
+    @Override
+    public void renderBackground(DrawContext context, int mouseX, int mouseY, float delta) {
+        renderBackdrop(context);
+    }
+
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
-        renderBackdrop(context);
+        // super.render сам вызывает renderBackground, поэтому идёт первым — иначе фон лёг бы поверх UI.
+        super.render(context, mouseX, mouseY, delta);
 
         float panelX = width * 0.08f;
         float titleY = height * 0.22f;
@@ -77,8 +87,6 @@ public class WantedTitleScreen extends Screen {
         context.drawText(textRenderer, "Minecraft 1.21.1 · Fabric", 6, height - 20, Theme.TEXT_MUTED, false);
         context.drawText(textRenderer, "Wanted Visuals v1.0 — только визуал, клиент-сайд",
                 6, height - 10, Theme.TEXT_MUTED, false);
-
-        super.render(context, mouseX, mouseY, delta);
     }
 
     private void renderBackdrop(DrawContext context) {

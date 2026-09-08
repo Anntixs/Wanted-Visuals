@@ -26,15 +26,19 @@ jobs:
       - name: Install headless OpenGL stack
         run: |
           sudo apt-get update
-          sudo apt-get install -y xvfb libgl1 libglu1-mesa mesa-utils libxi6 libxcursor1 libxrandr2 libxinerama1
+          sudo apt-get install -y xvfb libgl1 libglu1-mesa mesa-utils libxi6 libxcursor1 libxrandr2 libxinerama1 ffmpeg
 
-      - name: Launch client and wait for the main menu
+      - name: Launch client and screenshot the main menu
         run: |
           set -uo pipefail
           rm -rf run/logs
-          # Клиент запускаем в фоне: ждём в логе признак, что игра дошла до меню.
-          xvfb-run -a --server-args="-screen 0 1280x720x24" \
-            gradle runClient --no-daemon > run-output.log 2>&1 &
+
+          # Свой Xvfb на фиксированном дисплее, чтобы можно было снять кадр.
+          Xvfb :99 -screen 0 1280x720x24 &
+          sleep 3
+          export DISPLAY=:99
+
+          gradle runClient --no-daemon > run-output.log 2>&1 &
           gradle_pid=$!
 
           ok=0
@@ -51,7 +55,13 @@ jobs:
             sleep 5
           done
 
-          # Гасим клиент в любом случае, чтобы шаг не висел.
+          if [ "$ok" = "1" ]; then
+            # Даём меню отрисоваться и снимаем экран.
+            sleep 15
+            ffmpeg -y -f x11grab -video_size 1280x720 -i :99 -frames:v 1 menu.png 2>/dev/null || true
+            ls -la menu.png || echo "скриншот не снят"
+          fi
+
           kill -9 "$gradle_pid" 2>/dev/null || true
           pkill -9 -f "net.fabricmc.devlaunchinjector" 2>/dev/null || true
           pkill -9 -f "GradleWrapperMain|GradleDaemon" 2>/dev/null || true
@@ -82,6 +92,7 @@ jobs:
         with:
           name: client-logs
           path: |
+            menu.png
             run-output.log
             run/logs/**
             run/crash-reports/**

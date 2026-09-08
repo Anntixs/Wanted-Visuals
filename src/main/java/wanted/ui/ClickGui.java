@@ -76,7 +76,8 @@ public class ClickGui extends Screen {
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
         layout();
-        renderBackground(context, mouseX, mouseY, delta);
+        // super.render сам вызывает renderBackground — иначе фон рисуется поверх панели.
+        super.render(context, mouseX, mouseY, delta);
 
         Render2D.shadow(context, panelX, panelY, PANEL_WIDTH, PANEL_HEIGHT, 10);
         Render2D.roundedRect(context, panelX, panelY, PANEL_WIDTH, PANEL_HEIGHT, 10, Theme.PANEL);
@@ -85,8 +86,6 @@ public class ClickGui extends Screen {
         renderHeader(context, mouseX, mouseY);
         renderModules(context, mouseX, mouseY);
         renderSettings(context, mouseX, mouseY);
-
-        super.render(context, mouseX, mouseY, delta);
     }
 
     // ------------------------------------------------------------------ рейл
